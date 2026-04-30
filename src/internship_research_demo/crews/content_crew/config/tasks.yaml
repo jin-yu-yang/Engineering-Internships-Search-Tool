@@ -1,0 +1,79 @@
+research_task:
+  description: >
+    Research current {season} internship opportunities for {student_status}.
+
+    User-selected search constraints:
+    - applied science or engineering field: {applied_field}
+    - role keywords: {role_family}
+    - work location or region: {work_location}
+    - acceptable work modes: {work_modes}
+    - work authorization rule: {sponsorship_filter}
+    - additional search keywords: {additional_keywords}
+
+    Find more than {opportunity_count} candidates if possible, then filter
+    down to the strongest matches. Use employer career pages or official job
+    posts as primary evidence whenever possible. If CPT/OPT support is
+    required, include only opportunities with direct CPT/OPT language or
+    credible employer evidence that CPT/OPT is accepted for internships. If
+    CPT/OPT support is not required, still capture work authorization language
+    and visa risk.
+
+    For each candidate, capture:
+    - company
+    - role title
+    - application or job URL
+    - location or remote/hybrid status
+    - why it fits {applied_field}
+    - CPT/OPT sponsorship or compatibility evidence, if relevant
+    - application deadline or freshness signal if available
+    - compensation, team, or technical scope if available
+    - risks, caveats, or missing facts
+    - source URLs used
+  expected_output: >
+    A structured research brief with at least {opportunity_count} qualified
+    internship candidates and source URLs for every candidate. Clearly label
+    direct CPT/OPT evidence, indirect evidence, or missing work-authorization
+    evidence.
+  agent: internship_researcher
+
+ranking_report_task:
+  description: >
+    Use the research brief to create a ranked markdown report of the top
+    {opportunity_count} {season} {applied_field} internship opportunities for
+    {student_status}.
+
+    User ranking priorities: {ranking_priorities}
+
+    Ranking rules:
+    - Apply the user's selected field, work location, work modes, and work
+      authorization rule.
+    - When CPT/OPT is required, prefer direct CPT/OPT evidence over indirect
+      employer evidence.
+    - Prefer current official postings over stale or third-party listings.
+    - Prefer roles with clear {applied_field} responsibilities.
+    - Penalize missing deadlines, unclear work authorization language, or
+      postings that appear closed.
+
+    Score each opportunity out of 100 using this rubric unless the user's
+    ranking priorities strongly imply different weights:
+    - 30 points: fit for {applied_field} and role keywords
+    - 25 points: work authorization fit and CPT/OPT evidence
+    - 15 points: posting freshness and application clarity
+    - 15 points: location and work-mode fit
+    - 10 points: technical depth, mentorship, or team quality
+    - 5 points: compensation, brand signal, or career upside
+
+    The report must include:
+    - title
+    - short methodology
+    - ranked table with score out of 100
+    - one section per opportunity with evidence, fit, CPT/OPT notes, risks,
+      and next action
+    - "Watchouts" section for uncertainty
+    - source links
+  expected_output: >
+    A concise markdown report without code fences, ranking exactly
+    {opportunity_count} internship opportunities. Every ranked item must
+    include source links and a CPT/OPT evidence note.
+  agent: ranking_analyst
+  output_file: output/internship_report.md
