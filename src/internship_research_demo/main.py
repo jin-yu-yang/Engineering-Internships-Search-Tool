@@ -19,13 +19,20 @@ def _as_text(value: Any, default: str) -> str:
 
 
 class InternshipResearchState(BaseModel):
-    applied_field: str = "software engineering and applied AI"
-    role_family: str = "software engineering and AI engineering"
+    applied_field: str = "software engineering"
+    role_family: str = "software engineering internships"
     season: str = "Summer 2026"
     work_location: str = "United States"
     work_modes: str = "onsite, hybrid, or remote"
+    degree_levels: str = "undergraduate and master's students"
     student_status: str = "international students in the US using CPT or OPT"
     sponsorship_filter: str = "must sponsor or explicitly allow CPT/OPT"
+    application_status_filter: str = (
+        "must still be accepting applications; exclude closed, expired, or filled postings"
+    )
+    employment_type_filter: str = (
+        "internships only; exclude New Grad, full-time, permanent, and long-term employment roles"
+    )
     additional_keywords: str = "internship, intern, university recruiting"
     ranking_priorities: str = (
         "CPT/OPT evidence, field fit, posting freshness, technical depth, location fit"
@@ -56,12 +63,23 @@ class InternshipResearchFlow(Flow[InternshipResearchState]):
             self.state.work_modes = _as_text(
                 crewai_trigger_payload.get("work_modes"), self.state.work_modes
             )
+            self.state.degree_levels = _as_text(
+                crewai_trigger_payload.get("degree_levels"), self.state.degree_levels
+            )
             self.state.student_status = crewai_trigger_payload.get(
                 "student_status", self.state.student_status
             )
             self.state.sponsorship_filter = _as_text(
                 crewai_trigger_payload.get("sponsorship_filter"),
                 self.state.sponsorship_filter,
+            )
+            self.state.application_status_filter = _as_text(
+                crewai_trigger_payload.get("application_status_filter"),
+                self.state.application_status_filter,
+            )
+            self.state.employment_type_filter = _as_text(
+                crewai_trigger_payload.get("employment_type_filter"),
+                self.state.employment_type_filter,
             )
             self.state.additional_keywords = _as_text(
                 crewai_trigger_payload.get("additional_keywords"),
@@ -101,8 +119,11 @@ class InternshipResearchFlow(Flow[InternshipResearchState]):
                     "season": self.state.season,
                     "work_location": self.state.work_location,
                     "work_modes": self.state.work_modes,
+                    "degree_levels": self.state.degree_levels,
                     "student_status": self.state.student_status,
                     "sponsorship_filter": self.state.sponsorship_filter,
+                    "application_status_filter": self.state.application_status_filter,
+                    "employment_type_filter": self.state.employment_type_filter,
                     "additional_keywords": self.state.additional_keywords,
                     "ranking_priorities": self.state.ranking_priorities,
                     "opportunity_count": self.state.opportunity_count,

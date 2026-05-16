@@ -5,9 +5,12 @@ research_task:
     User-selected search constraints:
     - applied science or engineering field: {applied_field}
     - role keywords: {role_family}
+    - candidate degree level: {degree_levels}
     - work location or region: {work_location}
     - acceptable work modes: {work_modes}
     - work authorization rule: {sponsorship_filter}
+    - application status rule: {application_status_filter}
+    - employment type rule: {employment_type_filter}
     - additional search keywords: {additional_keywords}
 
     Find more than {opportunity_count} candidates if possible, then filter
@@ -18,13 +21,33 @@ research_task:
     CPT/OPT support is not required, still capture work authorization language
     and visa risk.
 
+    Treat application status as a hard eligibility filter. Do not include or
+    rank any posting if the employer page says the application is closed,
+    expired, filled, no longer accepting applications, or unavailable. If
+    application status is unclear, verify against the official employer page
+    before using it and mark the freshness evidence explicitly.
+
+    Treat employment type as a hard eligibility filter. Search for internship,
+    intern, co-op, or university internship postings only. Do not include New
+    Grad, graduate program, full-time, permanent, returnship, rotational
+    program, or long-term employment roles, even if they otherwise match the
+    field.
+
+    Treat degree level as an eligibility and ranking filter. Prefer postings
+    whose minimum qualifications match {degree_levels}. If a posting is
+    explicitly PhD-only, include it only when PhD students are selected. If a
+    posting excludes the selected degree level, do not include it.
+
     For each candidate, capture:
     - company
     - role title
     - application or job URL
     - location or remote/hybrid status
     - why it fits {applied_field}
+    - eligible degree level and evidence from the posting
+    - evidence that the role is an internship/co-op rather than New Grad or full-time
     - CPT/OPT sponsorship or compatibility evidence, if relevant
+    - evidence that the application is still open or accepting applications
     - application deadline or freshness signal if available
     - compensation, team, or technical scope if available
     - risks, caveats, or missing facts
@@ -33,7 +56,9 @@ research_task:
     A structured research brief with at least {opportunity_count} qualified
     internship candidates and source URLs for every candidate. Clearly label
     direct CPT/OPT evidence, indirect evidence, or missing work-authorization
-    evidence.
+    evidence. Every candidate must include evidence that applications are
+    still open or accepting submissions, evidence of degree-level fit, and
+    evidence that the role is an internship rather than New Grad/full-time.
   agent: internship_researcher
 
 ranking_report_task:
@@ -45,8 +70,11 @@ ranking_report_task:
     User ranking priorities: {ranking_priorities}
 
     Ranking rules:
-    - Apply the user's selected field, work location, work modes, and work
-      authorization rule.
+    - Apply the user's selected field, degree level, work location, work modes,
+      and work authorization rule.
+    - Do not rank New Grad, full-time, permanent, or long-term employment roles.
+    - Do not rank closed, expired, filled, unavailable, or no-longer-accepting
+      postings.
     - When CPT/OPT is required, prefer direct CPT/OPT evidence over indirect
       employer evidence.
     - Prefer current official postings over stale or third-party listings.
@@ -58,9 +86,9 @@ ranking_report_task:
     ranking priorities strongly imply different weights:
     - 30 points: fit for {applied_field} and role keywords
     - 25 points: work authorization fit and CPT/OPT evidence
-    - 15 points: posting freshness and application clarity
+    - 15 points: confirmed open application status, freshness, and application clarity
     - 15 points: location and work-mode fit
-    - 10 points: technical depth, mentorship, or team quality
+    - 10 points: degree-level fit, technical depth, mentorship, or team quality
     - 5 points: compensation, brand signal, or career upside
 
     The report must include:
@@ -68,7 +96,7 @@ ranking_report_task:
     - short methodology
     - ranked table with score out of 100
     - one section per opportunity with evidence, fit, CPT/OPT notes, risks,
-      and next action
+      degree-level match, and next action
     - "Watchouts" section for uncertainty
     - source links
   expected_output: >

@@ -3,8 +3,9 @@ internship_researcher:
     Applied Science and Engineering Internship Researcher
   goal: >
     Find current {season} internship opportunities in {applied_field} for
-    {student_status}, constrained by {work_location}, {work_modes}, and
-    the rule: {sponsorship_filter}.
+    {degree_levels} who are {student_status}, constrained by {work_location},
+    {work_modes}, and the rules: {sponsorship_filter};
+    {application_status_filter}; {employment_type_filter}.
   backstory: >
     You are a careful university career researcher who works with F-1
     international students in applied science and engineering. You verify each opportunity

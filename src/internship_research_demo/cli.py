@@ -6,18 +6,47 @@ from typing import Any
 from internship_research_demo.main import kickoff
 
 
-FIELD_CHOICES = [
-    "software engineering and applied AI",
-    "machine learning engineering",
-    "robotics engineering",
-    "data science and analytics engineering",
-    "aerospace engineering",
-    "biomedical engineering",
-    "environmental engineering",
-    "electrical and computer engineering",
+DEFAULT_FIELD = "software engineering"
+
+FIELD_GROUPS = [
+    (
+        "Software & Computing",
+        [
+            "Software engineering",
+            "Machine learning / AI engineering",
+            "Data science & analytics",
+            "Cybersecurity",
+            "Cloud & DevOps / SRE",
+            "Embedded systems & firmware",
+        ],
+    ),
+    (
+        "Hardware & Physical Engineering",
+        [
+            "Electrical engineering",
+            "Computer / hardware engineering",
+            "Mechanical engineering",
+            "Aerospace engineering",
+            "Robotics & controls",
+            "Materials science & engineering",
+            "Civil / structural engineering",
+            "Chemical engineering",
+            "Industrial & systems engineering",
+        ],
+    ),
+    (
+        "Life & Earth Sciences",
+        [
+            "Biomedical engineering",
+            "Bioinformatics / computational biology",
+            "Environmental & energy engineering",
+        ],
+    ),
 ]
+FIELD_CHOICES = [field for _, fields in FIELD_GROUPS for field in fields]
 
 WORK_MODE_CHOICES = ["onsite", "hybrid", "remote"]
+DEGREE_LEVEL_CHOICES = ["undergrad-master", "phd"]
 
 
 def _ask_text(label: str, default: str) -> str:
@@ -67,8 +96,12 @@ def _ask_yes_no(label: str, default: bool) -> bool:
 
 def _ask_field(default: str) -> str:
     print("\nChoose a field or enter your own:")
-    for index, field in enumerate(FIELD_CHOICES, start=1):
-        print(f"  {index}. {field}")
+    index = 1
+    for group, fields in FIELD_GROUPS:
+        print(f"\n  {group}")
+        for field in fields:
+            print(f"  {index:2}. {field}")
+            index += 1
     value = input(f"Field [1-{len(FIELD_CHOICES)} or custom, default: {default}]: ").strip()
     if not value:
         return default
@@ -89,22 +122,54 @@ def _ask_work_modes(default_modes: list[str]) -> list[str]:
     return selected or default_modes
 
 
+def _ask_degree_levels(default_levels: list[str]) -> list[str]:
+    print("\nToggle candidate degree levels:")
+    selected: list[str] = []
+    if _ask_yes_no("Include undergraduate/master's internships?", "undergrad-master" in default_levels):
+        selected.append("undergrad-master")
+    if _ask_yes_no("Include PhD internships?", "phd" in default_levels):
+        selected.append("phd")
+    return selected or default_levels
+
+
 def _sponsorship_text(require_opt_cpt: bool) -> str:
     if require_opt_cpt:
         return "must sponsor, support, or explicitly allow CPT/OPT for internships"
     return "do not require CPT/OPT support, but note work authorization and visa risk"
 
 
+def _application_status_text(open_only: bool) -> str:
+    if open_only:
+        return "must still be accepting applications; exclude closed, expired, or filled postings"
+    return "may include closed postings only if clearly labeled as closed and not ranked"
+
+
+def _degree_levels_text(levels: list[str]) -> str:
+    has_undergrad_master = "undergrad-master" in levels
+    has_phd = "phd" in levels
+    if has_undergrad_master and has_phd:
+        return "undergraduate, master's, and PhD students"
+    if has_phd:
+        return "PhD students"
+    return "undergraduate and master's students"
+
+
+def _employment_type_text() -> str:
+    return "internships only; exclude New Grad, full-time, permanent, and long-term employment roles"
+
+
 def build_interactive_payload() -> dict[str, Any]:
-    field = _ask_field("software engineering and applied AI")
+    field = _ask_field(DEFAULT_FIELD)
     season = _ask_text("Internship season", "Summer 2026")
     role_family = _ask_text(
         "Role keywords",
-        f"{field} internships, applied science internships, engineering internships",
+        f"{field} internships",
     )
     work_location = _ask_text("Work location or region", "United States")
     work_modes = _ask_work_modes(["onsite", "hybrid", "remote"])
+    degree_levels = _ask_degree_levels(["undergrad-master"])
     require_opt_cpt = _ask_yes_no("Require CPT/OPT sponsorship or compatibility?", True)
+    open_applications_only = _ask_yes_no("Only rank roles still accepting applications?", True)
     opportunity_count = _ask_int("How many internships should be ranked?", 3)
     additional_keywords = _ask_text(
         "Extra search keywords",
@@ -124,8 +189,11 @@ def build_interactive_payload() -> dict[str, Any]:
         "season": season,
         "work_location": work_location,
         "work_modes": ", ".join(work_modes),
+        "degree_levels": _degree_levels_text(degree_levels),
         "student_status": "international students in the US using CPT or OPT",
         "sponsorship_filter": _sponsorship_text(require_opt_cpt),
+        "application_status_filter": _application_status_text(open_applications_only),
+        "employment_type_filter": _employment_type_text(),
         "additional_keywords": additional_keywords,
         "ranking_priorities": ranking_priorities,
         "opportunity_count": opportunity_count,
@@ -134,17 +202,21 @@ def build_interactive_payload() -> dict[str, Any]:
 
 
 def build_payload_from_args(args: argparse.Namespace) -> dict[str, Any]:
-    field = args.field or "software engineering and applied AI"
+    field = args.field or DEFAULT_FIELD
     work_modes = args.work_mode or ["onsite", "hybrid", "remote"]
+    degree_levels = args.degree_level or ["undergrad-master"]
     return {
         "applied_field": field,
         "role_family": args.role_keywords
-        or f"{field} internships, applied science internships, engineering internships",
+        or f"{field} internships",
         "season": args.season,
         "work_location": args.location,
         "work_modes": ", ".join(work_modes),
+        "degree_levels": _degree_levels_text(degree_levels),
         "student_status": args.student_status,
         "sponsorship_filter": _sponsorship_text(args.require_opt_cpt),
+        "application_status_filter": _application_status_text(args.open_applications_only),
+        "employment_type_filter": _employment_type_text(),
         "additional_keywords": args.keywords,
         "ranking_priorities": args.priorities,
         "opportunity_count": args.count,
@@ -168,6 +240,15 @@ def parse_args() -> argparse.Namespace:
         help="Allowed work mode. Repeat for multiple modes.",
     )
     parser.add_argument(
+        "--degree-level",
+        action="append",
+        choices=DEGREE_LEVEL_CHOICES,
+        help=(
+            "Candidate degree level. Repeat for multiple levels. "
+            "Choices: undergrad-master, phd."
+        ),
+    )
+    parser.add_argument(
         "--require-opt-cpt",
         dest="require_opt_cpt",
         action="store_true",
@@ -179,6 +260,19 @@ def parse_args() -> argparse.Namespace:
         dest="require_opt_cpt",
         action="store_false",
         help="Do not require CPT/OPT compatibility; report authorization risk instead.",
+    )
+    parser.add_argument(
+        "--open-applications-only",
+        dest="open_applications_only",
+        action="store_true",
+        default=True,
+        help="Only rank internships that are still accepting applications.",
+    )
+    parser.add_argument(
+        "--allow-closed-for-context",
+        dest="open_applications_only",
+        action="store_false",
+        help="Allow closed postings as context, but do not rank them.",
     )
     parser.add_argument(
         "--count",
