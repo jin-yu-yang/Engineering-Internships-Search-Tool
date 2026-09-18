@@ -5,3 +5,4 @@ Library/
 __pycache__/
 lib/
 .DS_Store
+outout/
