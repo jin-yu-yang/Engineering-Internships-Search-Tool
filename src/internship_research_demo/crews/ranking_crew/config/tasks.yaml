@@ -1,0 +1,56 @@
+ranking_report_task:
+  description: >
+    Create a ranked markdown report of the top {rank_count} {season}
+    {applied_field} internship opportunities for {student_status}, using only
+    the candidates below.
+
+    Candidates as JSON. Each item has the researcher's findings under
+    "candidate", the research branch under "source_branch", and an automated
+    HTTP check under "verification". The verification status is either
+    verified_open (the posting page loaded and shows the role title) or
+    unverifiable (the page could not be checked automatically, often because
+    it is rendered with JavaScript or blocks bots). Dead links were already
+    removed.
+
+    {candidates_json}
+
+    Shortfall note: {shortfall_note}
+
+    User ranking priorities: {ranking_priorities}
+
+    Ranking rules:
+    - Rank only the candidates above. Never add, invent, or look up other opportunities.
+    - Use only URLs that appear in a candidate's url or source_urls fields.
+    - Apply the user's degree level ({degree_levels}), work location
+      ({work_location}), work modes ({work_modes}), and work authorization
+      rule ({sponsorship_filter}).
+    - When CPT/OPT is required, prefer direct CPT/OPT evidence over indirect
+      employer evidence.
+    - Prefer roles with clear {applied_field} responsibilities.
+    - Penalize missing deadlines and unclear work authorization language.
+
+    Score each opportunity out of 100 using this rubric unless the user's
+    ranking priorities strongly imply different weights:
+    - 30 points: fit for {applied_field} and role keywords
+    - 25 points: work authorization fit and CPT/OPT evidence
+    - 15 points: confirmed open application status, freshness, and application
+      clarity. A candidate whose verification status is unverifiable can earn
+      at most 7 of these 15 points.
+    - 15 points: location and work-mode fit
+    - 10 points: degree-level fit, technical depth, mentorship, or team quality
+    - 5 points: compensation, brand signal, or career upside
+
+    The report must include:
+    - title
+    - short methodology that mentions the automated URL check
+    - ranked table with score out of 100 and a Verification column
+    - one section per opportunity with evidence, fit, CPT/OPT notes, risks,
+      degree-level match, verification status, and next action
+    - "Watchouts" section for uncertainty; if the shortfall note is not
+      "none", state it there
+    - source links
+  expected_output: >
+    A concise markdown report without code fences, ranking exactly
+    {rank_count} internship opportunities. Every ranked item must include
+    source links, a CPT/OPT evidence note, and its verification status.
+  agent: ranking_analyst

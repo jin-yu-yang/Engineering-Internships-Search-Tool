@@ -1,0 +1,67 @@
+research_task:
+  description: >
+    Research current {season} internship opportunities for {student_status}.
+
+    Source focus for this search: {source_focus}
+
+    User-selected search constraints:
+    - applied science or engineering field: {applied_field}
+    - role keywords: {role_family}
+    - candidate degree level: {degree_levels}
+    - work location or region: {work_location}
+    - acceptable work modes: {work_modes}
+    - work authorization rule: {sponsorship_filter}
+    - application status rule: {application_status_filter}
+    - employment type rule: {employment_type_filter}
+    - additional search keywords: {additional_keywords}
+
+    {round_hint}
+
+    Do not return any posting whose URL is in this exclusion list: {exclude_urls}
+
+    Find more than {opportunity_count} candidates if possible, then filter
+    down to the strongest matches. Use employer career pages or official job
+    posts as primary evidence whenever possible. If CPT/OPT support is
+    required, include only opportunities with direct CPT/OPT language or
+    credible employer evidence that CPT/OPT is accepted for internships. If
+    CPT/OPT support is not required, still capture work authorization language
+    and visa risk.
+
+    Treat application status as a hard eligibility filter. Do not include any
+    posting if the employer page says the application is closed, expired,
+    filled, no longer accepting applications, or unavailable. If application
+    status is unclear, verify against the official employer page before using
+    it and mark the freshness evidence explicitly.
+
+    Treat employment type as a hard eligibility filter. Search for internship,
+    intern, co-op, or university internship postings only. Do not include New
+    Grad, graduate program, full-time, permanent, returnship, rotational
+    program, or long-term employment roles, even if they otherwise match the
+    field.
+
+    Treat degree level as an eligibility filter. Prefer postings whose minimum
+    qualifications match {degree_levels}. If a posting is explicitly PhD-only,
+    include it only when PhD students are selected. If a posting excludes the
+    selected degree level, do not include it.
+
+    For each candidate, fill these fields:
+    - company
+    - title: the exact role title from the posting
+    - url: the application or job posting URL, starting with http:// or https://
+    - location
+    - work_mode: onsite, hybrid, remote, or unknown
+    - field_fit: why it fits {applied_field}
+    - degree_level_evidence: eligible degree level and evidence from the posting
+    - internship_evidence: evidence the role is an internship or co-op, not New Grad or full-time
+    - cpt_opt_evidence: exactly one of direct, indirect, or missing
+    - cpt_opt_note: the CPT/OPT or work authorization language, or why it is missing
+    - open_status_evidence: evidence that applications are still open
+    - deadline: application deadline or freshness signal, or null
+    - compensation: compensation, team, or technical scope, or null
+    - risks: a list of risks, caveats, or missing facts
+    - source_urls: every URL you used for this candidate, at least one
+  expected_output: >
+    A single JSON object with one key, "candidates", whose value is a list of
+    candidate objects that use exactly the fields listed above. Return only the
+    JSON object, with no markdown fences and no commentary.
+  agent: internship_researcher
