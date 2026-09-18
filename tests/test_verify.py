@@ -27,7 +27,7 @@ def test_gone_status_is_dead(code):
 def test_closed_redirect_is_dead():
     result = classify_response(200, "https://boards.greenhouse.io/acme?error=true", JOB_HTML, TITLE)
     assert result.status == "dead"
-    assert result.reason.startswith("closed redirect")
+    assert result.reason == "closed redirect"
 
 
 def test_closed_phrase_beats_title_match():

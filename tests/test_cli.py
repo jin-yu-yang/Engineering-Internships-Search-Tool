@@ -59,3 +59,19 @@ def test_interactive_payload_enables_review(monkeypatch):
     payload = build_interactive_payload()
     assert payload["review_enabled"] is True
     assert payload["max_extra_rounds"] == 2
+
+
+def test_main_interactive_honors_max_extra_rounds_flag(monkeypatch):
+    import sys
+
+    from internship_research_demo import cli
+
+    monkeypatch.setattr(sys, "argv", ["internship-agent", "--interactive", "--max-extra-rounds", "4"])
+    monkeypatch.setattr("builtins.input", lambda _prompt="": "")
+    captured = {}
+    monkeypatch.setattr(cli, "kickoff", lambda payload: captured.update(payload))
+
+    cli.main()
+
+    assert captured["max_extra_rounds"] == 4
+    assert captured["review_enabled"] is True

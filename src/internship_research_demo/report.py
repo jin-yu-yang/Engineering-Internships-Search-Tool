@@ -25,6 +25,6 @@ def build_no_results_report(
         "## Next steps",
         "",
         "- Broaden the field, location, or work modes.",
-        "- Re-run with `--no-require-opt-cpt` or `--allow-closed-for-context` to see near misses.",
+        "- Re-run with `--no-require-opt-cpt` or more `--max-extra-rounds` to widen the search.",
     ]
     return "\n".join(lines) + "\n"

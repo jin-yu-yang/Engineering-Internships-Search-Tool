@@ -72,7 +72,7 @@ def classify_response(status_code: int, final_url: str, html: str, title: str) -
         return _result("dead", status_code, str(status_code))
     for pattern in CLOSED_REDIRECT_PATTERNS:
         if pattern.search(final_url):
-            return _result("dead", status_code, f"closed redirect: {final_url}")
+            return _result("dead", status_code, "closed redirect")
     if status_code != 200:
         return _result("unverifiable", status_code, f"http {status_code}")
 

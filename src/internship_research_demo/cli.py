@@ -348,7 +348,11 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
 
 def main() -> None:
     args = parse_args()
-    payload = build_interactive_payload() if args.interactive else build_payload_from_args(args)
+    if args.interactive:
+        payload = build_interactive_payload()
+        payload["max_extra_rounds"] = args.max_extra_rounds
+    else:
+        payload = build_payload_from_args(args)
     kickoff(payload)
 
 

@@ -1167,6 +1167,7 @@ version = "0.1.0"
 source = { editable = "." }
 dependencies = [
     { name = "crewai", extra = ["tools"] },
+    { name = "httpx" },
 ]
 
 [package.dev-dependencies]
@@ -1175,7 +1176,10 @@ dev = [
 ]
 
 [package.metadata]
-requires-dist = [{ name = "crewai", extras = ["tools"], specifier = "==1.15.22" }]
+requires-dist = [
+    { name = "crewai", extras = ["tools"], specifier = "==1.15.22" },
+    { name = "httpx", specifier = ">=0.28,<1" },
+]
 
 [package.metadata.requires-dev]
 dev = [{ name = "pytest", specifier = ">=9.1.1" }]
