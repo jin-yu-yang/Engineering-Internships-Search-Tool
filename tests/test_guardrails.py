@@ -87,6 +87,30 @@ def test_report_guardrail_accepts_known_urls_with_punctuation_and_variants():
     assert data == report
 
 
+def test_report_guardrail_accepts_bold_markdown_url():
+    guardrail = make_report_url_guardrail({"https://acme.com/jobs/1"})
+    report = "Apply at **https://acme.com/jobs/1**."
+    ok, data = guardrail(output(report))
+    assert ok
+    assert data == report
+
+
+def test_report_guardrail_accepts_backtick_wrapped_url():
+    guardrail = make_report_url_guardrail({"https://acme.com/jobs/1"})
+    report = "Apply at `https://acme.com/jobs/1` today."
+    ok, data = guardrail(output(report))
+    assert ok
+    assert data == report
+
+
+def test_report_guardrail_accepts_italic_markdown_url():
+    guardrail = make_report_url_guardrail({"https://acme.com/jobs/1"})
+    report = "Apply at _https://acme.com/jobs/1_ today."
+    ok, data = guardrail(output(report))
+    assert ok
+    assert data == report
+
+
 def test_report_guardrail_rejects_unknown_urls():
     guardrail = make_report_url_guardrail({"https://acme.com/jobs/1"})
     ok, message = guardrail(output("See https://made-up.example.com/job"))

@@ -98,7 +98,7 @@ def build_shortfall_note(viable: int, wanted: int, rounds: int) -> str:
     )
 
 
-URL_RE = re.compile(r"https?://[^\s)\]>\"'<|]+")
+URL_RE = re.compile(r"https?://[^\s)\]>\"'<|*`]+")
 
 
 def extract_json(raw: str) -> str:
@@ -149,7 +149,7 @@ def make_report_url_guardrail(allowed_urls: set[str]) -> Callable[[Any], tuple[b
     allowed = {normalize_url(u) for u in allowed_urls}
 
     def report_url_guardrail(output: Any) -> tuple[bool, str]:
-        found = {u.rstrip(".,;:") for u in URL_RE.findall(output.raw)}
+        found = {u.rstrip(".,;:*`_") for u in URL_RE.findall(output.raw)}
         unknown = sorted(u for u in found if normalize_url(u) not in allowed)
         if unknown:
             return (
