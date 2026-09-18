@@ -2,7 +2,7 @@
 
 Date: 2026-09-18
 Status: Approved design, pending implementation plan
-CrewAI version: 1.14.3
+CrewAI version: 1.15.22 (project pin upgraded from 1.14.3)
 
 ## Goal
 
@@ -42,11 +42,23 @@ prepare_inputs
    └─► research_round        (3× ResearchCrew.kickoff_async via asyncio.gather)
           └─► merge_and_dedupe
                  └─► verify_urls          (concurrent HTTP; drop "dead")
-                        └─► @router route_after_verify
-                               ├─ "research_more" ─► research_round
-                               ├─ "review"        ─► review_shortlist ─► route_after_verify
-                               └─ "rank"          ─► rank_candidates ─► save_report
+                        └─► @router route_after_verify   (also triggered by review_shortlist)
+                               ├─ "RESEARCH_MORE" ─► research_round
+                               ├─ "REVIEW"        ─► review_shortlist ─► route_after_verify
+                               ├─ "RANK"          ─► rank_candidates ─┐
+                               └─ "NO_RESULTS"    ─► write_no_results ─┴► save_report
 ```
+
+CrewAI 1.15.22 constraints (verified by probe):
+
+- Only `@router` methods emit labels; a plain `@listen` method's return value
+  triggers nothing. So `route_after_verify` is declared as
+  `@router(or_(verify_urls, review_shortlist))`.
+- A router label may not equal any handler method name. Labels are uppercase
+  constants: `RESEARCH_MORE`, `REVIEW`, `RANK`, `NO_RESULTS`.
+- When a task has a guardrail, CrewAI does not parse `output_pydantic` before
+  the guardrail runs. The research guardrail parses the raw JSON itself and, on
+  success, returns the brief as a JSON string; CrewAI then fills `.pydantic`.
 
 ### File layout
 
@@ -57,6 +69,7 @@ src/internship_research_demo/
   verify.py            URL verification (new)
   review.py            review command parsing + table rendering (new)
   routing.py           decide_route, merge/dedupe, title filter, guardrails (new)
+  report.py            "no results" report builder (new)
   crews/research_crew/research_crew.py, config/agents.yaml, config/tasks.yaml (new)
   crews/ranking_crew/ranking_crew.py,  config/agents.yaml, config/tasks.yaml (new)
   crews/content_crew/  (removed)
@@ -174,7 +187,9 @@ failure when:
   `new grad|full[- ]time|graduate program|rotational` (case-insensitive).
 - **Exclusions:** drop candidates whose normalized URL is in `rejected_urls`
   or already in `candidates`.
-- New survivors are recorded in `new_candidate_urls` and added to `seen_urls`.
+- New survivors' normalized URLs are added to `seen_urls`. After verification,
+  the non-dead ones are recorded in `new_candidate_urls` (so review never shows
+  dead links).
 
 ### URL verification (`verify.py`)
 
@@ -205,7 +220,10 @@ Evaluated in this order (first match wins):
 
 ### Router (`decide_route` in `routing.py`)
 
-Pure function over state, wrapped by `@router`:
+Pure function over explicit arguments (not the Flow state object), wrapped by
+`@router`. The Flow method applies the state mutations (reset `force_more`,
+increment `research_round`, set `shortfall_note`). Labels below are shown in
+lowercase for readability; the code uses the uppercase constants.
 
 ```
 viable = len(candidates)
@@ -219,6 +237,8 @@ if viable < opportunity_count and rounds_left:
     return "research_more"
 if review_enabled and reviewed_round < research_round and new_candidate_urls:
     return "review"
+if viable == 0:
+    return "no_results"
 return "rank"
 ```
 
