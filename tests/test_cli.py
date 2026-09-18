@@ -33,3 +33,29 @@ def test_ask_season_custom_text(monkeypatch):
 def test_ask_season_out_of_range_number_is_custom_text(monkeypatch):
     monkeypatch.setattr("builtins.input", lambda _prompt: "9")
     assert _ask_season(SEPT) == "9"
+
+
+def test_review_flag_defaults_off_and_rounds_default_two():
+    payload = build_payload_from_args(parse_args([]))
+    assert payload["review_enabled"] is False
+    assert payload["max_extra_rounds"] == 2
+
+
+def test_review_flag_and_rounds():
+    payload = build_payload_from_args(parse_args(["--review", "--max-extra-rounds", "0"]))
+    assert payload["review_enabled"] is True
+    assert payload["max_extra_rounds"] == 0
+
+
+def test_max_extra_rounds_rejects_out_of_range():
+    import pytest
+    with pytest.raises(SystemExit):
+        parse_args(["--max-extra-rounds", "6"])
+
+
+def test_interactive_payload_enables_review(monkeypatch):
+    from internship_research_demo.cli import build_interactive_payload
+    monkeypatch.setattr("builtins.input", lambda _prompt="": "")
+    payload = build_interactive_payload()
+    assert payload["review_enabled"] is True
+    assert payload["max_extra_rounds"] == 2

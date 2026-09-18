@@ -68,6 +68,13 @@ def _positive_int(value: str) -> int:
     return parsed
 
 
+def _extra_rounds(value: str) -> int:
+    parsed = int(value)
+    if not 0 <= parsed <= 5:
+        raise argparse.ArgumentTypeError("must be between 0 and 5")
+    return parsed
+
+
 def _ask_int(label: str, default: int, minimum: int = 1, maximum: int = 20) -> int:
     while True:
         value = input(f"{label} [{default}]: ").strip()
@@ -215,6 +222,8 @@ def build_interactive_payload() -> dict[str, Any]:
         "ranking_priorities": ranking_priorities,
         "opportunity_count": opportunity_count,
         "report_filename": report_filename,
+        "review_enabled": True,
+        "max_extra_rounds": 2,
     }
 
 
@@ -238,6 +247,8 @@ def build_payload_from_args(args: argparse.Namespace) -> dict[str, Any]:
         "ranking_priorities": args.priorities,
         "opportunity_count": args.count,
         "report_filename": _clean_report_filename(args.output),
+        "review_enabled": args.review,
+        "max_extra_rounds": args.max_extra_rounds,
     }
 
 
@@ -320,6 +331,17 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         "--output",
         default="internship_report.md",
         help="Markdown filename under output/.",
+    )
+    parser.add_argument(
+        "--review",
+        action="store_true",
+        help="Review the verified shortlist in the terminal before ranking.",
+    )
+    parser.add_argument(
+        "--max-extra-rounds",
+        type=_extra_rounds,
+        default=2,
+        help="Extra research rounds when too few candidates survive (0-5). Default: 2.",
     )
     return parser.parse_args(argv)
 

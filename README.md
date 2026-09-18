@@ -11,10 +11,20 @@ output/internship_report.md
 
 ## What It Does
 
-The project runs a sequential CrewAI workflow:
+The project runs a CrewAI Flow:
 
-1. `internship_researcher` searches for active internship postings and verifies them against source pages.
-2. `ranking_analyst` scores the qualified opportunities and writes a ranked report.
+1. Three research branches run in parallel: employer career pages, job boards,
+   and curated intern lists. Each returns structured candidates as JSON.
+2. Candidates are merged and deduplicated, and New Grad / full-time titles are dropped.
+3. Every posting URL is checked over HTTP and labeled `verified_open`,
+   `unverifiable` (kept, but ranked lower), or `dead` (dropped).
+4. If fewer than `--count` candidates survive, the flow searches again with
+   broader keywords, up to `--max-extra-rounds` extra rounds (default 2).
+5. With `--review` (or `--interactive`), you review the shortlist in the
+   terminal before ranking: press Enter to accept, type numbers to drop, or type
+   `more` to search again.
+6. `ranking_analyst` scores the surviving candidates and writes the ranked
+   report. The report can only link to URLs the research found.
 
 The workflow is designed for international students in the US and can filter by
 CPT/OPT compatibility, degree level, work mode, location, application status,
@@ -104,6 +114,7 @@ Interactive mode prompts for:
 - extra search keywords
 - ranking priorities
 - output filename
+- shortlist review before ranking
 
 ## Run With Flags
 
@@ -188,6 +199,12 @@ uv run internship-agent \
 --priorities PRIORITIES
   Comma-separated ranking priorities.
 
+--review
+  Review the verified shortlist in the terminal before ranking.
+
+--max-extra-rounds N
+  Extra research rounds when too few candidates survive (0-5). Default: 2.
+
 --output OUTPUT
   Markdown filename under output/.
 ```
@@ -219,17 +236,17 @@ HOME="$PWD" CREWAI_STORAGE_DIR=crewai_storage uv run internship-agent --interact
 
 ```text
 src/internship_research_demo/main.py
-  Flow state, trigger payload handling, and report saving.
+  Flow state, orchestration (research fan-out, verification, router, review), and report saving.
 
 src/internship_research_demo/cli.py
   Interactive prompts and CLI flag parsing.
 
-src/internship_research_demo/crews/content_crew/content_crew.py
-  Crew, agents, tools, tasks, and sequential process wiring.
+src/internship_research_demo/crews/research_crew/
+  Researcher agent and structured research task (JSON output with a guardrail).
 
-src/internship_research_demo/crews/content_crew/config/agents.yaml
-  Agent roles, goals, and backstories.
+src/internship_research_demo/crews/ranking_crew/
+  Ranking analyst and report task (URL guardrail).
 
-src/internship_research_demo/crews/content_crew/config/tasks.yaml
-  Research and ranking instructions.
+src/internship_research_demo/models.py, seasons.py, verify.py, routing.py, review.py, report.py
+  Pure logic: data models, season math, URL verification, merge/dedupe, guardrails, router decisions, review prompt, no-results report.
 ```

@@ -184,3 +184,22 @@ def test_review_disabled_never_prompts(monkeypatch, tmp_path):
     fake = FakeCrews(research=lambda branch, i: _three() if i == 0 else [])
     _run(monkeypatch, tmp_path, fake, opportunity_count=3)
     assert len(fake.ranking_calls) == 1
+
+
+def test_trigger_runs_never_prompt_for_review(monkeypatch, tmp_path):
+    import json
+    import sys
+
+    def no_input(_prompt=""):
+        raise AssertionError("input() must not be called")
+
+    monkeypatch.setattr("builtins.input", no_input)
+    monkeypatch.chdir(tmp_path)
+    fake = FakeCrews(research=lambda branch, i: _three() if i == 0 else [])
+    fake.install(monkeypatch)
+    payload = {"review_enabled": True, "opportunity_count": 3, "report_filename": "t.md"}
+    monkeypatch.setattr(sys, "argv", ["run_with_trigger", json.dumps(payload)])
+
+    main.run_with_trigger()
+
+    assert (tmp_path / "output" / "t.md").exists()
