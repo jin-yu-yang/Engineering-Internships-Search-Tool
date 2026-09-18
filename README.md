@@ -9,6 +9,9 @@ The agent produces a Markdown report in:
 output/internship_report.md
 ```
 
+Use `--output NAME.md` to write a different file under `output/`. Only that one
+file is written per run.
+
 ## What It Does
 
 The project runs a CrewAI Flow:
@@ -17,7 +20,8 @@ The project runs a CrewAI Flow:
    and curated intern lists. Each returns structured candidates as JSON.
 2. Candidates are merged and deduplicated, and New Grad / full-time titles are dropped.
 3. Every posting URL is checked over HTTP and labeled `verified_open`,
-   `unverifiable` (kept, but ranked lower), or `dead` (dropped).
+   `unverifiable` (kept, but ranked lower), or `dead` (dropped). See
+   [URL Verification](#url-verification).
 4. If fewer than `--count` candidates survive, the flow searches again with
    broader keywords, up to `--max-extra-rounds` extra rounds (default 2).
 5. With `--review` (or `--interactive`), you review the shortlist in the
@@ -25,6 +29,10 @@ The project runs a CrewAI Flow:
    `more` to search again.
 6. `ranking_analyst` scores the surviving candidates and writes the ranked
    report. The report can only link to URLs the research found.
+
+If no candidates survive, the flow skips ranking and writes a short
+"No qualifying internships found" report with verification counts per status
+and per research branch.
 
 The workflow is designed for international students in the US and can filter by
 CPT/OPT compatibility, degree level, work mode, location, application status,
@@ -44,6 +52,24 @@ Defaults are defined in `src/internship_research_demo/main.py` and the CLI:
 - Employment type: internships only
 - Excluded roles: New Grad, full-time, permanent, and long-term employment
 - Report count: 3 ranked opportunities
+- Extra research rounds: 2 (when fewer than the report count survive)
+- Shortlist review: off (on with `--review` or `--interactive`)
+
+## URL Verification
+
+Each candidate's posting URL is fetched once, without an LLM:
+
+- `dead`: HTTP 404/410, a known "job closed" redirect, or page text such as
+  "no longer accepting applications". Dead postings are dropped.
+- `verified_open`: the page loads and shows most of the role title's words.
+- `unverifiable`: the page could not be confirmed, for example because it is
+  rendered with JavaScript, blocks bots (401/403/429), times out, or is not
+  HTML. These stay in the ranking but can earn at most 7 of the 15
+  application-status points.
+
+For safety, URLs pointing at `localhost`, `.local` names, private or link-local
+IP addresses, or ports other than 80/443 are never fetched and are marked
+`unverifiable`. At most 2 MB of each page is read.
 
 ## Field Picker
 
@@ -116,6 +142,9 @@ Interactive mode prompts for:
 - output filename
 - shortlist review before ranking
 
+Interactive mode always reviews the shortlist. You can still combine it with
+`--max-extra-rounds`, e.g. `uv run internship-agent --interactive --max-extra-rounds 0`.
+
 ## Run With Flags
 
 Example for robotics internships for undergraduate/master's students:
@@ -145,6 +174,13 @@ uv run internship-agent \
   --open-applications-only \
   --count 5 \
   --output phd_ai_report.md
+```
+
+To review the verified shortlist before ranking and allow up to 3 extra
+research rounds:
+
+```bash
+uv run internship-agent --field "Cybersecurity" --review --max-extra-rounds 3
 ```
 
 To include both undergraduate/master's and PhD roles, repeat the flag:
@@ -184,8 +220,9 @@ uv run internship-agent \
   Require CPT/OPT compatibility or only report authorization risk.
 
 --open-applications-only / --allow-closed-for-context
-  Rank only roles still accepting applications, or allow closed roles as context
-  while keeping them out of the ranking.
+  Tell the researcher to include only roles still accepting applications
+  (default), or to also consider roles whose status is unclear. Postings that
+  URL verification finds closed are always dropped before ranking.
 
 --count COUNT
   Number of internships to rank.
@@ -221,6 +258,18 @@ Or pass a trigger payload:
 
 ```bash
 crewai run_with_trigger '{"applied_field":"Biomedical engineering","degree_levels":"undergraduate and masters students","work_modes":"remote, hybrid","application_status_filter":"must still be accepting applications; exclude closed, expired, or filled postings","opportunity_count":3}'
+```
+
+Trigger runs are unattended: `review_enabled` is ignored, so they never wait for
+terminal input. The payload may set `max_extra_rounds` (default 2).
+
+## Tests
+
+The test suite makes no LLM or network calls:
+
+```bash
+uv sync
+uv run pytest -q
 ```
 
 ## Local Storage
