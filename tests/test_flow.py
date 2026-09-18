@@ -176,6 +176,60 @@ def test_review_more_runs_another_round_then_reviews_new_items(monkeypatch, tmp_
     assert inputs["rank_count"] == 2
 
 
+def test_review_accumulates_candidates_across_rounds(monkeypatch, tmp_path):
+    def research(branch, i):
+        if branch != "career_pages":
+            return []
+        if i == 0:
+            return [make_candidate(company="A", url="https://a.com/1")]
+        if i == 1:
+            return [
+                make_candidate(company="B", url="https://b.com/1"),
+                make_candidate(company="C", url="https://c.com/1"),
+            ]
+        return []
+
+    fake = FakeCrews(research=research)
+    answers = iter(["1"])
+    monkeypatch.setattr("builtins.input", lambda _prompt="": next(answers))
+    _run(
+        monkeypatch,
+        tmp_path,
+        fake,
+        opportunity_count=3,
+        review_enabled=True,
+        max_extra_rounds=1,
+    )
+
+    inputs, _ = fake.ranking_calls[0]
+    assert "https://a.com/1" not in inputs["candidates_json"]
+    assert "https://b.com/1" in inputs["candidates_json"]
+    assert "https://c.com/1" in inputs["candidates_json"]
+
+
+def test_review_runs_once_when_later_rounds_find_nothing(monkeypatch, tmp_path):
+    def research(branch, i):
+        if branch != "career_pages":
+            return []
+        if i == 0:
+            return [make_candidate(company="A", url="https://a.com/1")]
+        return []
+
+    fake = FakeCrews(research=research)
+    calls = []
+
+    def fake_input(_prompt=""):
+        calls.append(_prompt)
+        return ""
+
+    monkeypatch.setattr("builtins.input", fake_input)
+    _run(monkeypatch, tmp_path, fake, opportunity_count=3, review_enabled=True)
+
+    assert len(calls) == 1
+    inputs, _ = fake.ranking_calls[0]
+    assert "https://a.com/1" in inputs["candidates_json"]
+
+
 def test_review_disabled_never_prompts(monkeypatch, tmp_path):
     def no_input(_prompt=""):
         raise AssertionError("input() must not be called")

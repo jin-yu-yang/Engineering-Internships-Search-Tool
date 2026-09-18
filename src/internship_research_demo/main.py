@@ -284,7 +284,7 @@ class InternshipResearchFlow(Flow[InternshipResearchState]):
                 )
             )
             new_urls.append(normalize_url(sourced.candidate.url))
-        self.state.new_candidate_urls = new_urls
+        self.state.new_candidate_urls += new_urls
         self.state.pending = []
 
     @listen(REVIEW)
@@ -306,6 +306,7 @@ class InternshipResearchFlow(Flow[InternshipResearchState]):
         elif isinstance(command, More):
             self.state.force_more = True
         self.state.reviewed_round = self.state.research_round
+        self.state.new_candidate_urls = []
 
     @router(or_(verify_urls, review_shortlist))
     def route_after_verify(self):

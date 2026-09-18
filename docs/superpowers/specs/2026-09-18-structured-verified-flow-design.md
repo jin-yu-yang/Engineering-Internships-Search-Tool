@@ -124,7 +124,7 @@ class VerifiedCandidate(BaseModel):
 |---|---|---|
 | `season` | `str` | `default_factory=lambda: default_season(date.today())` |
 | `candidates` | `list[VerifiedCandidate]` | surviving (non-dead) candidates |
-| `new_candidate_urls` | `list[str]` | URLs added in the latest round (for review) |
+| `new_candidate_urls` | `list[str]` | verified candidate URLs not yet reviewed; accumulated across rounds, cleared after review |
 | `seen_urls` | `set[str]` | normalized URLs from all rounds |
 | `rejected_urls` | `set[str]` | URLs dropped by the user in review |
 | `research_round` | `int` | 0-based round counter |
@@ -188,8 +188,11 @@ failure when:
 - **Exclusions:** drop candidates whose normalized URL is in `rejected_urls`
   or already in `candidates`.
 - New survivors' normalized URLs are added to `seen_urls`. After verification,
-  the non-dead ones are recorded in `new_candidate_urls` (so review never shows
-  dead links).
+  the non-dead ones are appended to `new_candidate_urls` (so review never shows
+  dead links). `new_candidate_urls` holds verified candidate URLs not yet
+  reviewed; it accumulates across research rounds (it is never overwritten)
+  and is only cleared, to `[]`, once `review_shortlist` has handled a review
+  command.
 
 ### URL verification (`verify.py`)
 
@@ -258,8 +261,10 @@ Clarifications:
 ### Review (`review_shortlist`, `review.py`)
 
 Runs only when `review_enabled`. Shows candidates from `new_candidate_urls`
-as a numbered table: company, title, branch, verification status, CPT/OPT
-evidence level, deadline.
+(verified candidates not yet reviewed, accumulated across every research
+round since the last review — not just the latest round) as a numbered
+table: company, title, branch, verification status, CPT/OPT evidence level,
+deadline.
 
 `parse_review_command(text: str, n: int) -> Accept | Drop | More | Invalid`:
 
@@ -270,7 +275,9 @@ evidence level, deadline.
 
 On `Drop`, remove those candidates from `candidates` and add their URLs to
 `rejected_urls`. On `More`, set `force_more = True`. Always set
-`reviewed_round = research_round`, then route again.
+`reviewed_round = research_round` and clear `new_candidate_urls` to `[]`
+(the shown candidates are now considered reviewed regardless of the
+command), then route again.
 
 ### Ranking (`RankingCrew`)
 
