@@ -161,3 +161,26 @@ def make_report_url_guardrail(allowed_urls: set[str]) -> Callable[[Any], tuple[b
         return (True, output.raw)
 
     return report_url_guardrail
+
+
+def decide_route(
+    *,
+    viable: int,
+    wanted: int,
+    research_round: int,
+    max_extra_rounds: int,
+    force_more: bool,
+    review_enabled: bool,
+    reviewed_round: int,
+    has_new: bool,
+) -> str:
+    rounds_left = research_round < max_extra_rounds
+    if force_more and rounds_left:
+        return RESEARCH_MORE
+    if viable < wanted and rounds_left:
+        return RESEARCH_MORE
+    if review_enabled and reviewed_round < research_round and has_new:
+        return REVIEW
+    if viable == 0:
+        return NO_RESULTS
+    return RANK
