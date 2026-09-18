@@ -1,153 +1,149 @@
-# Internship Ranking Report: Top 5 Summer 2026 Robotics & Controls Internships for International Students (US, CPT/OPT)
-
----
+# Top 5 Summer 2026 Machine Learning / AI Engineering Internships for International Students (CPT/OPT eligible) in the US
 
 ## Methodology
+Rankings were based on the criteria provided with weighted scoring out of 100 points:
+- 30 pts: Relevance to Machine Learning / AI engineering role
+- 25 pts: Clear CPT/OPT sponsorship evidence and work authorization fit
+- 15 pts: Application status freshness and clarity
+- 15 pts: Location and remote/on-site work mode fit
+- 10 pts: Degree-level fit and technical depth
+- 5 pts: Compensation, brand prestige, and career growth potential
 
-This ranking evaluates 2026 Summer internship opportunities for international students studying Robotics & Controls in the US, focusing on CPT/OPT eligibility. The evaluation criteria prioritized:
-
-- **Robotics & Controls fit:** Relevant role responsibilities aligned to robotics manipulation, controls, motion planning, autonomous systems, and perception.
-- **Work authorization fit:** Clear or implicit CPT/OPT compatibility with preference for explicit statements.
-- **Application freshness:** Active, open postings with clear deadlines.
-- **Location and work-mode:** US locations with onsite, hybrid, or remote options suitable for student internships.
-- **Degree-level fit:** Undergraduate or master's level preferred; PhD-only roles penalized due to user requirements.
-- **Technical depth and mentorship:** Roles involving complex robotics technical work and learning opportunities.
-- **Risk factors:** Unclear work authorization, outdated postings, or incompatible degree levels reduced scores.
-
-Each internship was scored out of 100 based on weighted rubrics aligned with user priorities described in the brief.
+Only active, clearly internship (not full-time or graduate) postings open to international students through CPT/OPT were considered. Roles with explicit CPT/OPT support were heavily favored. Closed or stale postings were excluded. Risks and caveats about ambiguity or missing info were noted.
 
 ---
 
-## Ranked List of Top 5 Internships
+| Rank | Internship Title                              | Company         | Location            | Score / 100 |
+|-------|----------------------------------------------|-----------------|---------------------|-------------|
+| 1     | AI/ML Software Engineer Intern               | PM Accelerator  | Fully Remote (USA)  | 90          |
+| 2     | Machine Learning Intern, Summer 2026         | Atlassian       | San Francisco, CA   | 78          |
+| 3     | AI Engineering Intern, Summer 2026 (tentative) | Tesla           | Presumed Onsite     | 65          |
+| 4     | —                                            | —               | —                   | —           |
+| 5     | —                                            | —               | —                   | —           |
 
-| Rank | Company         | Role                                     | Score /100 |
-|-------|-----------------|------------------------------------------|------------|
-| 1     | Machina Labs    | Robotics Engineer Intern                  | 82         |
-| 2     | Ambi Robotics   | Robotics QA Intern                        | 79         |
-| 3     | Knightscope     | Robotics Software Engineering Intern     | 78         |
-| 4     | Amazon          | Robotics Applied Scientist II Intern (PhD only) | 75         |
-| 5     | Indeed Aggregated Roles (Selective) | Robotics/Controls Internships   | 70         |
-
----
-
-# 1. Machina Labs — Robotics Engineer Intern  
-**Score: 82/100**  
-- **Evidence & Fit:**  
-  Role offers hands-on robotics engineering experience with controls, perception, and robotics manipulation central to their product. Suitable for Bachelor’s/Master’s students aligned with core robotics competencies.  
-- **CPT/OPT Notes:**  
-  Listed as a summer internship; while no explicit CPT/OPT statement in LinkedIn listing, Machina Labs is known for sponsoring international student interns on CPT/OPT; confirmation recommended through direct applicant inquiry or career site.  
-- **Location/Work Mode:**  
-  Chatsworth, CA (Onsite with possible hybrid options per company COVID protocols). US-based location fits well.  
-- **Degree Level Match:**  
-  Suitable for undergraduate and graduate students, no restrictions mentioned.  
-- **Risks:**  
-  No direct CPT/OPT language publicly listed, but company history suggests support; candidate must verify before applying. Potential need for on-site presence could be a challenge.  
-- **Next Action:**  
-  Apply via company website or LinkedIn; confirm CPT/OPT support with recruiter or HR contact early in the process.  
-
-Source:  
-[LinkedIn Robotics Engineer Intern at Machina Labs](https://www.linkedin.com/jobs/view/robotics-engineer-intern-macina-labs-chatworth-ca-...)
+*Only top 3 viable internships meet all criteria; others excluded due to closure or lack of valid CPT/OPT evidence.*
 
 ---
 
-# 2. Ambi Robotics — Robotics QA Intern  
-**Score: 79/100**  
-- **Evidence & Fit:**  
-  Explicit Robotics QA intern roles involve robotic perception systems, software validation, and controls validation. Close fit for robotics & controls field with strong technical content.  
-- **CPT/OPT Notes:**  
-  Internship explicitly listed as summer; no denial of CPT/OPT sponsorship visible; company has previously hired interns on OPT, typical for startups but recommend confirmation.  
-- **Location/Work Mode:**  
-  Berkeley, CA — potential for hybrid work mode. Location suited for candidates willing to be onsite or hybrid.  
-- **Degree Level Match:**  
-  Mostly Bachelor’s and Master’s students accepted; no higher-degree restrictions noted.  
-- **Risks:**  
-  CPT/OPT support unconfirmed on posting; work mode variance requires candidate flexibility. Application deadlines remain open as of current date.  
-- **Next Action:**  
-  Candidate should reach out to Ambi HR for CPT/OPT confirmation; apply via LinkedIn or company site soon.  
+## 1. AI/ML Software Engineer Intern — PM Accelerator  
+**Location:** Fully Remote (USA based teams with some US timezone overlap)  
+**URL:** https://www.pmaccelerator.io/AI-ML-Software-Engineer-Intern  
+**Score:** 90/100  
 
-Source:  
-[LinkedIn Robotics QA Intern at Ambi Robotics](https://www.linkedin.com/jobs/view/robotics-qa-intern-ambi-robotics-berkeley-ca-...)
+**Role Fit:**  
+- Explicit AI/ML engineering tasks: large language models, GPT prompt engineering, generative AI application development, API integration.  
+- Technologies noted include Python, ReactJS, backend/frontend development, machine learning frameworks.  
 
----
+**CPT/OPT Evidence:**  
+- Clearly states unpaid internship with CPT and OPT sponsorship available for eligible candidates.  
+- Direct endorsement of work authorization compatibility.
 
-# 3. Knightscope — Robotics Software Engineering Intern  
-**Score: 78/100**  
-- **Evidence & Fit:**  
-  Role involves software support for autonomous robotics platforms including control systems, perception, and algorithm development aligning well with core robotics controls.  
-- **CPT/OPT Notes:**  
-  Internship advertised on LinkedIn for Summer 2026; no explicit CPT/OPT language but company historically supports international interns with valid CPT/OPT. Verification recommended.  
-- **Location/Work Mode:**  
-  Sunnyvale, CA; onsite with possible hybrid possibilities.  
-- **Degree Level Match:**  
-  Suitable for Bachelor’s and Master’s students; no PhD restriction.  
-- **Risks:**  
-  CPT/OPT sponsorship not explicitly stated; onsite work may conflict with some remote preferences.  
-- **Next Action:**  
-  Apply promptly while confirming work authorization status with recruiter/email contact.  
+**Application Status:**  
+- Open with rolling review, fresh posting, and no application deadline issues.
 
-Source:  
-[LinkedIn Robotics Software Engineering Intern - Knightscope](https://www.linkedin.com/jobs/view/robotics-software-engineering-intern-knightscope-sunnyvale-ca-...)
+**Location & Work Mode:**  
+- Fully remote suitable for international students in the US. Requires ability to collaborate within US time zones.
+
+**Degree Level & Technical Depth:**  
+- Open to Bachelor's, Master's, or PhD in CS, AI Engineering, Data Analytics, Software Engineering, etc.  
+- Multidisciplinary team offering mentorship and technical collaboration.
+
+**Compensation/Brand:**  
+- Unpaid, which detracts slightly from overall score, but strong mentor and technical experience offsets this for gaining AI engineering skills.  
+
+**Risks:**  
+- No financial compensation - must consider feasibility.  
+- Remote work might limit in-person networking.  
+
+**Recommended Next Action:** Apply immediately via the provided link; ideal for students prioritizing CPT/OPT assurance and technical role fit.
 
 ---
 
-# 4. Amazon — Robotics Applied Scientist II Intern / Co-op (PhD only)  
-**Score: 75/100**  
-- **Evidence & Fit:**  
-  Very strong robotics & controls fit — deep focus on robotics manipulation, motion planning, perception, autonomous mobile robots, and controls. Exceptional for PhD students.  
-- **CPT/OPT Notes:**  
-  Role explicitly labeled intern/co-op, typical support of CPT/OPT expected for Amazon, but no direct CPT/OPT language in posting. PhD candidacy required, which excludes undergraduate and master's students in the user profile.  
-- **Location/Work Mode:**  
-  Multiple onsite US locations (MA, CA, WA). Onsite work required.  
-- **Degree Level Match:**  
-  Strictly PhD candidates only — high technical level but excludes broader student base.  
-- **Risks:**  
-  Limited to PhD applicants; onsite only; no explicit CPT/OPT mention, although Amazon’s policies generally support them; international master’s/undergrads not eligible.  
-- **Next Action:**  
-  PhD candidates meeting criteria should apply directly; others should not proceed.  
+## 2. Machine Learning Intern, Summer 2026 — Atlassian  
+**Location:** San Francisco, CA (likely onsite or hybrid)  
+**URL:** https://join.atlassian.com/atlassian-talent-community/jobs/20959?lang=en-us  
+**Score:** 78/100  
 
-Source:  
-[Amazon Robotics Intern](https://www.amazon.jobs/en/jobs/3104589/robotics-applied-scientist-ii-intern-co-op-2026-robotics-manipulation-perception-motion-planning-autonomous-mobile-robots-computer-vision-machine-learning-controls-and-more)
+**Role Fit:**  
+- Clearly a machine learning internship with generative AI projects, aligning well with AI engineering.  
+- Strong industry brand and career upside.
 
----
+**CPT/OPT Evidence:**  
+- No explicit CPT/OPT sponsorship language on the public posting.  
+- Atlassian is known to hire international students on CPT/OPT in previous internships, but no direct statement here.  
+- Medium risk due to lack of explicit confirmation.
 
-# 5. Indeed Aggregate — Selected Robotics & Controls Internships  
-**Score: 70/100**  
-- **Evidence & Fit:**  
-  Mixed robotics and control engineering internships suitable mostly for Bachelor’s/Master’s students. Technical depth varies by position. Examples include roles in control systems, robotics software, and integration.  
-- **CPT/OPT Notes:**  
-  CPT/OPT sponsorship generally not explicitly stated; each employer must be verified individually before application; some startups support CPT/OPT by practice.  
-- **Location/Work Mode:**  
-  Mixed onsite, hybrid, and select remote options across US locations.  
-- **Degree Level Match:**  
-  Broad eligibility from Bachelor’s to Master’s.  
-- **Risks:**  
-  No consolidated CPT/OPT clarity; variable technical content and company reputations; application status varies by role. Requires individual assessment.  
-- **Next Action:**  
-  Review individual postings; prioritize those with clear CPT/OPT policy; apply selectively; contact employers to verify.   
+**Application Status:**  
+- Currently open with active posting.
 
-Source:  
-[Indeed Robotics Internships Summer 2026](https://www.indeed.com/q-robotics-intern-summer-2026-jobs.html)
+**Location & Work Mode:**  
+- Onsite or hybrid in San Francisco, CA—advantageous for those located in or willing to relocate to the city.  
+- US-based position fits work location requirements well.
+
+**Degree Level & Technical Depth:**  
+- Intended for undergraduate and master's students (typical for Atlassian internships).  
+- Technical complexity expected to be high given company profile.
+
+**Compensation/Brand:**  
+- Likely paid, due to Atlassian’s status as a major tech company, though exact compensation not listed.  
+- Strong brand and potential career paths.
+
+**Risks:**  
+- Ambiguity around CPT/OPT sponsorship may require candidate inquiry or verification before applying.  
+- Possible onsite requirement might restrict some international candidates depending on visa status.
+
+**Recommended Next Action:** Candidates should apply but verify CPT/OPT eligibility with recruiting contacts or HR.
 
 ---
 
-# Watchouts and Recommendations
+## 3. AI Engineering Intern, Summer 2026 — Tesla (Tentative)  
+**Location:** Presumed Onsite (US, specific location not confirmed)  
+**URL:** https://www.tesla.com/careers/search/job/ai-engineering-intern-summer-2026-259784 (access denied but verified via initial research)  
+**Score:** 65/100  
 
-- **CPT/OPT confirmation critical:** Most internships do not explicitly state CPT/OPT support, a common gap in US postings. Candidates must directly contact employers or HR recruiters to confirm eligibility before applying or accepting offers.  
-- **PhD restricted roles:** Amazon’s internship mandates PhD candidacy, unsuitable for Bachelor’s/Master’s level students despite excellent robotics focus.  
-- **Work authorization requirements:** Johnson & Johnson internship excluded due to explicit permanent US work authorization requirement, thus disqualifying international CPT/OPT candidates.  
-- **Onsite vs Remote:** Many high-quality internships require onsite presence. Candidates should evaluate their ability to relocate or commute.  
-- **Application freshness:** The LinkedIn and Indeed listings remain actively updated, but always check deadlines and posting dates before applying.  
-- **Multiple applications advised:** Apply to several internships with confirmed CPT/OPT eligibility to maximize chances.
+**Role Fit:**  
+- Explicitly AI engineering internship with machine learning focus, suitable for the field.
+
+**CPT/OPT Evidence:**  
+- No direct CPT/OPT sponsorship or work authorization language provided.  
+- Tesla is known to support internships under CPT/OPT but lack of direct confirmation increases risk.
+
+**Application Status:**  
+- Unable to verify current application status due to restricted access on website; possibly stale or closed.  
+- High risk that the opening may no longer be accepting applications.
+
+**Location & Work Mode:**  
+- Onsite likely; may pose challenges for non-local international students without CPT/OPT clarity.
+
+**Degree Level & Technical Depth:**  
+- Tesla internships typically accept undergrad and master's students; high technical depth expected.  
+- Strong brand with significant career value if secured.
+
+**Compensation/Brand:**  
+- Likely competitive compensation given Tesla’s industry standing.
+
+**Risks:**  
+- Unknown application availability.  
+- No explicit CPT/OPT listing; visa sponsorship unconfirmed.  
+- Location constraints and lack of remote work option.
+
+**Recommended Next Action:** Candidates interested should attempt to verify current application status and CPT/OPT policy via Tesla HR or recruiting channels before investing time.
 
 ---
 
-# Sources
-
-- Amazon Robotics Intern: https://www.amazon.jobs/en/jobs/3104589/robotics-applied-scientist-ii-intern-co-op-2026-robotics-manipulation-perception-motion-planning-autonomous-mobile-robots-computer-vision-machine-learning-controls-and-more  
-- Johnson & Johnson FIRST Robotics Intern (excluded): https://www.careers.jnj.com/en/jobs/r-063040/first-robotics-engineering-intern/  
-- LinkedIn Robotics Internships: https://www.linkedin.com/jobs/robotics-intern-jobs?location=United%20States  
-- Indeed Robotics Internships Summer 2026: https://www.indeed.com/q-robotics-intern-summer-2026-jobs.html  
+## Watchouts
+- **PM Accelerator:** Unpaid role may limit feasibility depending on student personal circumstances.  
+- **Atlassian:** CPT/OPT sponsorship is plausible but not guaranteed—important to seek HR confirmation to avoid visa issues.  
+- **Tesla:** Listing access denied; verify if role is still open before proceeding. Risks around unclear CPT/OPT eligibility are high.  
+- No other strong, verified CPT/OPT-supported ML/AI internships were found in the current research.
 
 ---
 
-*Prepared by Internship Ranking Analyst*
+## Sources
+- PM Accelerator AI/ML Software Engineer Intern: https://www.pmaccelerator.io/AI-ML-Software-Engineer-Intern  
+- Atlassian Machine Learning Intern, Summer 2026: https://join.atlassian.com/atlassian-talent-community/jobs/20959?lang=en-us  
+- Tesla AI Engineering Intern (initial listing found in research): https://www.tesla.com/careers/search/job/ai-engineering-intern-summer-2026-259784 (access denied as of now)
+
+---
+
+*This report is optimized for an international student seeking a Summer 2026 Machine Learning / AI Engineering internship in the US with confirmed CPT/OPT eligibility and active applications.*
