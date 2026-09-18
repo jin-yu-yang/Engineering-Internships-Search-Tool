@@ -18,11 +18,15 @@ from internship_research_demo.models import (
     VerifiedCandidate,
 )
 from internship_research_demo.report import build_no_results_report
+from internship_research_demo.review import Drop, More, run_review
 from internship_research_demo.routing import (
     NO_RESULTS,
     RANK,
+    RESEARCH_MORE,
+    REVIEW,
     allowed_urls_for,
     build_shortfall_note,
+    decide_route,
     merge_new_candidates,
     normalize_url,
     parse_brief,
@@ -31,10 +35,19 @@ from internship_research_demo.seasons import default_season
 from internship_research_demo.verify import verify_all
 
 BRANCHES: dict[str, str] = {
-    "all_sources": (
-        "Any credible source: employer career pages, job boards and aggregators, "
-        "and curated internship lists. Always follow through to the employer's "
-        "own posting URL when one exists."
+    "career_pages": (
+        "Employer career pages: large tech companies and employers known to accept "
+        "CPT/OPT for interns. Prefer official postings on company career sites and "
+        "their applicant tracking systems (Greenhouse, Lever, Workday)."
+    ),
+    "job_boards": (
+        "Job boards and aggregators: LinkedIn, Handshake, Indeed, and Built In. "
+        "Always follow through to the employer's own posting URL when one exists."
+    ),
+    "curated_lists": (
+        "Curated internship lists: GitHub internship lists such as SimplifyJobs and "
+        "Pitt CSC, and university career center listings. Follow each listing to the "
+        "employer's own posting URL."
     ),
 }
 ROUND_HINT = (
@@ -76,6 +89,10 @@ class InternshipResearchState(BaseModel):
     final_report: str = ""
 
     research_round: int = 0
+    max_extra_rounds: int = 2
+    review_enabled: bool = False
+    force_more: bool = False
+    reviewed_round: int = -1
     round_results: list[BranchResult] = Field(default_factory=list)
     pending: list[SourcedCandidate] = Field(default_factory=list)
     candidates: list[VerifiedCandidate] = Field(default_factory=list)
@@ -205,6 +222,13 @@ class InternshipResearchFlow(Flow[InternshipResearchState]):
                 crewai_trigger_payload.get("report_filename"),
                 self.state.report_filename,
             )
+            if "max_extra_rounds" in crewai_trigger_payload:
+                self.state.max_extra_rounds = max(
+                    0, int(crewai_trigger_payload["max_extra_rounds"])
+                )
+            self.state.review_enabled = bool(
+                crewai_trigger_payload.get("review_enabled", False)
+            )
             print(f"Using trigger payload: {crewai_trigger_payload}")
 
         print(
@@ -213,7 +237,7 @@ class InternshipResearchFlow(Flow[InternshipResearchState]):
             f"{self.state.applied_field} internships for {self.state.student_status}"
         )
 
-    @listen(prepare_research_inputs)
+    @listen(or_(prepare_research_inputs, RESEARCH_MORE))
     async def research_round(self):
         print(f"Research round {self.state.research_round + 1}")
         names = list(BRANCHES)
@@ -263,16 +287,49 @@ class InternshipResearchFlow(Flow[InternshipResearchState]):
         self.state.new_candidate_urls = new_urls
         self.state.pending = []
 
-    @router(verify_urls)
+    @listen(REVIEW)
+    def review_shortlist(self):
+        new_urls = set(self.state.new_candidate_urls)
+        items = [
+            vc for vc in self.state.candidates if normalize_url(vc.candidate.url) in new_urls
+        ]
+        command = run_review(items)
+        if isinstance(command, Drop):
+            dropped = {normalize_url(items[i - 1].candidate.url) for i in command.indices}
+            self.state.candidates = [
+                vc
+                for vc in self.state.candidates
+                if normalize_url(vc.candidate.url) not in dropped
+            ]
+            self.state.rejected_urls |= dropped
+            print(f"Dropped {len(dropped)} candidate(s)")
+        elif isinstance(command, More):
+            self.state.force_more = True
+        self.state.reviewed_round = self.state.research_round
+
+    @router(or_(verify_urls, review_shortlist))
     def route_after_verify(self):
-        if not self.state.candidates:
-            return NO_RESULTS
-        self.state.shortfall_note = build_shortfall_note(
-            len(self.state.candidates),
-            self.state.opportunity_count,
-            self.state.research_round + 1,
+        state = self.state
+        label = decide_route(
+            viable=len(state.candidates),
+            wanted=state.opportunity_count,
+            research_round=state.research_round,
+            max_extra_rounds=state.max_extra_rounds,
+            force_more=state.force_more,
+            review_enabled=state.review_enabled,
+            reviewed_round=state.reviewed_round,
+            has_new=bool(state.new_candidate_urls),
         )
-        return RANK
+        if state.force_more and label != RESEARCH_MORE:
+            print("No retry rounds left; continuing to ranking.")
+        state.force_more = False
+        if label == RESEARCH_MORE:
+            state.research_round += 1
+        elif label == RANK:
+            state.shortfall_note = build_shortfall_note(
+                len(state.candidates), state.opportunity_count, state.research_round + 1
+            )
+        return label
 
     @listen(RANK)
     def rank_candidates(self):
@@ -323,6 +380,9 @@ def run_with_trigger():
         trigger_payload = json.loads(sys.argv[1])
     except json.JSONDecodeError:
         raise Exception("Invalid JSON payload provided as argument")
+
+    # Review needs a human at the terminal; trigger runs are unattended.
+    trigger_payload.pop("review_enabled", None)
 
     internship_flow = InternshipResearchFlow()
 
