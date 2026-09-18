@@ -1,12 +1,46 @@
 #!/usr/bin/env python
+import asyncio
 import json
+import sys
+from datetime import date
 from pathlib import Path
 from typing import Any
 
-from crewai.flow import Flow, listen, start
-from pydantic import BaseModel
+from crewai.flow import Flow, listen, or_, router, start
+from pydantic import BaseModel, Field
 
-from internship_research_demo.crews.content_crew.content_crew import InternshipResearchCrew
+from internship_research_demo.crews.ranking_crew.ranking_crew import RankingCrew
+from internship_research_demo.crews.research_crew.research_crew import ResearchCrew
+from internship_research_demo.models import (
+    BranchResult,
+    ResearchBrief,
+    SourcedCandidate,
+    VerifiedCandidate,
+)
+from internship_research_demo.report import build_no_results_report
+from internship_research_demo.routing import (
+    NO_RESULTS,
+    RANK,
+    allowed_urls_for,
+    build_shortfall_note,
+    merge_new_candidates,
+    normalize_url,
+    parse_brief,
+)
+from internship_research_demo.seasons import default_season
+from internship_research_demo.verify import verify_all
+
+BRANCHES: dict[str, str] = {
+    "all_sources": (
+        "Any credible source: employer career pages, job boards and aggregators, "
+        "and curated internship lists. Always follow through to the employer's "
+        "own posting URL when one exists."
+    ),
+}
+ROUND_HINT = (
+    "Previous rounds found too few qualifying candidates. Broaden keywords and "
+    "adjacent role titles. Do not repeat excluded URLs."
+)
 
 
 def _as_text(value: Any, default: str) -> str:
@@ -21,7 +55,7 @@ def _as_text(value: Any, default: str) -> str:
 class InternshipResearchState(BaseModel):
     applied_field: str = "software engineering"
     role_family: str = "software engineering internships"
-    season: str = "Summer 2026"
+    season: str = Field(default_factory=lambda: default_season(date.today()))
     work_location: str = "United States"
     work_modes: str = "onsite, hybrid, or remote"
     degree_levels: str = "undergraduate and master's students"
@@ -41,6 +75,77 @@ class InternshipResearchState(BaseModel):
     report_filename: str = "internship_report.md"
     final_report: str = ""
 
+    research_round: int = 0
+    round_results: list[BranchResult] = Field(default_factory=list)
+    pending: list[SourcedCandidate] = Field(default_factory=list)
+    candidates: list[VerifiedCandidate] = Field(default_factory=list)
+    new_candidate_urls: list[str] = Field(default_factory=list)
+    seen_urls: set[str] = Field(default_factory=set)
+    rejected_urls: set[str] = Field(default_factory=set)
+    status_counts: dict[str, int] = Field(default_factory=dict)
+    branch_counts: dict[str, int] = Field(default_factory=dict)
+    shortfall_note: str = ""
+
+
+def base_inputs(state: InternshipResearchState) -> dict[str, Any]:
+    return {
+        "applied_field": state.applied_field,
+        "role_family": state.role_family,
+        "season": state.season,
+        "work_location": state.work_location,
+        "work_modes": state.work_modes,
+        "degree_levels": state.degree_levels,
+        "student_status": state.student_status,
+        "sponsorship_filter": state.sponsorship_filter,
+        "application_status_filter": state.application_status_filter,
+        "employment_type_filter": state.employment_type_filter,
+        "additional_keywords": state.additional_keywords,
+        "ranking_priorities": state.ranking_priorities,
+        "opportunity_count": state.opportunity_count,
+    }
+
+
+def research_inputs(state: InternshipResearchState, branch: str) -> dict[str, Any]:
+    excluded = sorted(state.seen_urls | state.rejected_urls)
+    return {
+        **base_inputs(state),
+        "source_focus": BRANCHES[branch],
+        "exclude_urls": ", ".join(excluded) or "none",
+        "round_hint": ROUND_HINT if state.research_round > 0 else "",
+    }
+
+
+def ranking_inputs(state: InternshipResearchState) -> dict[str, Any]:
+    return {
+        **base_inputs(state),
+        "rank_count": min(state.opportunity_count, len(state.candidates)),
+        "candidates_json": json.dumps([vc.model_dump() for vc in state.candidates], indent=2),
+        "shortfall_note": state.shortfall_note or "none",
+    }
+
+
+def search_constraints(state: InternshipResearchState) -> dict[str, str]:
+    return {
+        "Field": state.applied_field,
+        "Season": state.season,
+        "Location": state.work_location,
+        "Work modes": state.work_modes,
+        "Degree levels": state.degree_levels,
+        "Work authorization": state.sponsorship_filter,
+    }
+
+
+async def run_research_branch(branch: str, inputs: dict[str, Any]) -> ResearchBrief:
+    print(f"Research branch '{branch}' starting")
+    result = await ResearchCrew().crew().kickoff_async(inputs=inputs)
+    if isinstance(result.pydantic, ResearchBrief):
+        return result.pydantic
+    return parse_brief(result.raw)
+
+
+def run_ranking(inputs: dict[str, Any], allowed_urls: set[str]) -> str:
+    return RankingCrew(allowed_urls=allowed_urls).crew().kickoff(inputs=inputs).raw
+
 
 class InternshipResearchFlow(Flow[InternshipResearchState]):
     @start()
@@ -54,7 +159,9 @@ class InternshipResearchFlow(Flow[InternshipResearchState]):
             self.state.role_family = crewai_trigger_payload.get(
                 "role_family", self.state.role_family
             )
-            self.state.season = crewai_trigger_payload.get("season", self.state.season)
+            self.state.season = _as_text(
+                crewai_trigger_payload.get("season"), self.state.season
+            )
             self.state.work_location = _as_text(
                 crewai_trigger_payload.get("work_location")
                 or crewai_trigger_payload.get("location"),
@@ -107,41 +214,89 @@ class InternshipResearchFlow(Flow[InternshipResearchState]):
         )
 
     @listen(prepare_research_inputs)
-    def research_and_rank_internships(self):
-        print("Researching and ranking internship opportunities")
-        result = (
-            InternshipResearchCrew()
-            .crew()
-            .kickoff(
-                inputs={
-                    "applied_field": self.state.applied_field,
-                    "role_family": self.state.role_family,
-                    "season": self.state.season,
-                    "work_location": self.state.work_location,
-                    "work_modes": self.state.work_modes,
-                    "degree_levels": self.state.degree_levels,
-                    "student_status": self.state.student_status,
-                    "sponsorship_filter": self.state.sponsorship_filter,
-                    "application_status_filter": self.state.application_status_filter,
-                    "employment_type_filter": self.state.employment_type_filter,
-                    "additional_keywords": self.state.additional_keywords,
-                    "ranking_priorities": self.state.ranking_priorities,
-                    "opportunity_count": self.state.opportunity_count,
-                }
+    async def research_round(self):
+        print(f"Research round {self.state.research_round + 1}")
+        names = list(BRANCHES)
+        outcomes = await asyncio.gather(
+            *(run_research_branch(name, research_inputs(self.state, name)) for name in names),
+            return_exceptions=True,
+        )
+        results = []
+        for name, outcome in zip(names, outcomes):
+            if isinstance(outcome, BaseException):
+                print(f"Warning: research branch '{name}' failed: {outcome}")
+                results.append(BranchResult(branch=name, error=str(outcome)))
+            else:
+                results.append(BranchResult(branch=name, candidates=outcome.candidates))
+        self.state.round_results = results
+
+    @listen(research_round)
+    def merge_and_dedupe(self):
+        existing = [vc.candidate for vc in self.state.candidates]
+        excluded = self.state.seen_urls | self.state.rejected_urls
+        self.state.pending = merge_new_candidates(self.state.round_results, existing, excluded)
+        self.state.seen_urls |= {normalize_url(s.candidate.url) for s in self.state.pending}
+        for sourced in self.state.pending:
+            branch = sourced.source_branch
+            self.state.branch_counts[branch] = self.state.branch_counts.get(branch, 0) + 1
+        print(f"{len(self.state.pending)} new candidate(s) after merge")
+
+    @listen(merge_and_dedupe)
+    async def verify_urls(self):
+        pending = self.state.pending
+        verifications = await verify_all([s.candidate for s in pending])
+        new_urls = []
+        for sourced, verification in zip(pending, verifications):
+            status = verification.status
+            self.state.status_counts[status] = self.state.status_counts.get(status, 0) + 1
+            if status == "dead":
+                print(f"Dropping dead posting {sourced.candidate.url} ({verification.reason})")
+                continue
+            self.state.candidates.append(
+                VerifiedCandidate(
+                    candidate=sourced.candidate,
+                    source_branch=sourced.source_branch,
+                    verification=verification,
+                )
             )
+            new_urls.append(normalize_url(sourced.candidate.url))
+        self.state.new_candidate_urls = new_urls
+        self.state.pending = []
+
+    @router(verify_urls)
+    def route_after_verify(self):
+        if not self.state.candidates:
+            return NO_RESULTS
+        self.state.shortfall_note = build_shortfall_note(
+            len(self.state.candidates),
+            self.state.opportunity_count,
+            self.state.research_round + 1,
+        )
+        return RANK
+
+    @listen(RANK)
+    def rank_candidates(self):
+        print("Ranking verified internship candidates")
+        self.state.final_report = run_ranking(
+            ranking_inputs(self.state), allowed_urls_for(self.state.candidates)
         )
 
-        print("Internship report generated")
-        self.state.final_report = result.raw
+    @listen(NO_RESULTS)
+    def write_no_results(self):
+        print("No qualifying internships found")
+        self.state.final_report = build_no_results_report(
+            search_constraints(self.state),
+            self.state.research_round + 1,
+            self.state.status_counts,
+            self.state.branch_counts,
+        )
 
-    @listen(research_and_rank_internships)
+    @listen(or_(rank_candidates, write_no_results))
     def save_report(self):
-        print("Saving report")
         output_dir = Path("output")
         output_dir.mkdir(exist_ok=True)
         report_path = output_dir / self.state.report_filename
-        with open(report_path, "w") as f:
-            f.write(self.state.final_report)
+        report_path.write_text(self.state.final_report)
         print(f"Report saved to {report_path}")
 
 
@@ -161,8 +316,6 @@ def run_with_trigger():
     """
     Run the flow with trigger payload.
     """
-    import sys
-
     if len(sys.argv) < 2:
         raise Exception("No trigger payload provided. Please provide JSON payload as argument.")
 
