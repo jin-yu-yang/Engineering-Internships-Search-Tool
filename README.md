@@ -25,7 +25,7 @@ and field.
 Defaults are defined in `src/internship_research_demo/main.py` and the CLI:
 
 - Field: `software engineering`
-- Season: `Summer 2026`
+- Season: the next Summer term after today (for example Summer 2027 when run in September 2026)
 - Location: `United States`
 - Work modes: onsite, hybrid, or remote
 - Degree level: undergraduate/master's
@@ -112,7 +112,7 @@ Example for robotics internships for undergraduate/master's students:
 ```bash
 uv run internship-agent \
   --field "Robotics & controls" \
-  --season "Summer 2026" \
+  --season "Summer 2027" \
   --location "United States" \
   --degree-level undergrad-master \
   --work-mode remote \
@@ -158,7 +158,7 @@ uv run internship-agent \
   Override generated role keywords. Defaults to "<field> internships".
 
 --season SEASON
-  Internship season. Default: Summer 2026.
+  Internship season. Default: the next Summer term. Interactive mode offers the current term and the next four (for example Fall 2026, Winter 2027, Spring 2027, Summer 2027, Fall 2027).
 
 --location LOCATION
   Work location or region. Default: United States.

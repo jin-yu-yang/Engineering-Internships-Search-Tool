@@ -1,9 +1,11 @@
 #!/usr/bin/env python
 import argparse
+from datetime import date
 from pathlib import Path
 from typing import Any
 
 from internship_research_demo.main import kickoff
+from internship_research_demo.seasons import default_season, upcoming_seasons
 
 
 DEFAULT_FIELD = "software engineering"
@@ -112,6 +114,21 @@ def _ask_field(default: str) -> str:
     return value
 
 
+def _ask_season(today: date) -> str:
+    options = upcoming_seasons(today)
+    default = default_season(today)
+    print("\nChoose an internship season or enter your own:")
+    for index, season in enumerate(options, start=1):
+        marker = "  (default)" if season == default else ""
+        print(f"  {index}. {season}{marker}")
+    value = input(f"Season [1-{len(options)} or custom, default: {default}]: ").strip()
+    if not value:
+        return default
+    if value.isdigit() and 1 <= int(value) <= len(options):
+        return options[int(value) - 1]
+    return value
+
+
 def _ask_work_modes(default_modes: list[str]) -> list[str]:
     print("\nToggle work modes:")
     selected: list[str] = []
@@ -160,7 +177,7 @@ def _employment_type_text() -> str:
 
 def build_interactive_payload() -> dict[str, Any]:
     field = _ask_field(DEFAULT_FIELD)
-    season = _ask_text("Internship season", "Summer 2026")
+    season = _ask_season(date.today())
     role_family = _ask_text(
         "Role keywords",
         f"{field} internships",
@@ -224,14 +241,18 @@ def build_payload_from_args(args: argparse.Namespace) -> dict[str, Any]:
     }
 
 
-def parse_args() -> argparse.Namespace:
+def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Research and rank applied science or engineering internships with CrewAI."
     )
     parser.add_argument("--interactive", action="store_true", help="Prompt for all options.")
     parser.add_argument("--field", help="Applied science or engineering field to search.")
     parser.add_argument("--role-keywords", help="Role title keywords to search.")
-    parser.add_argument("--season", default="Summer 2026", help="Internship season.")
+    parser.add_argument(
+        "--season",
+        default=default_season(date.today()),
+        help="Internship season, e.g. 'Summer 2027'. Default: the next Summer term.",
+    )
     parser.add_argument("--location", default="United States", help="Work location or region.")
     parser.add_argument(
         "--work-mode",
@@ -300,7 +321,7 @@ def parse_args() -> argparse.Namespace:
         default="internship_report.md",
         help="Markdown filename under output/.",
     )
-    return parser.parse_args()
+    return parser.parse_args(argv)
 
 
 def main() -> None:
