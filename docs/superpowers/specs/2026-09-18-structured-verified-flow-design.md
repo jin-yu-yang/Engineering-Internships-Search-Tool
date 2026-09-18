@@ -172,6 +172,8 @@ failure when:
 - output does not parse as `ResearchBrief`
 - `candidates` is empty
 - any candidate's `url` is not `http://` or `https://`
+- any candidate's `url` has no host (empty `urlsplit(url).netloc`, e.g.
+  `https:///nohost`)
 - any candidate has empty `source_urls`
 
 ### Merge and dedupe (`merge_and_dedupe`)
@@ -199,6 +201,25 @@ failure when:
 `async def verify_all(candidates) -> list[Verification]` using
 `httpx.AsyncClient`: concurrency 8 (semaphore), 10s timeout, follow redirects,
 browser User-Agent. Only the primary `url` is fetched.
+
+Before fetching, a candidate URL is rejected without any request, as
+`unverifiable` / `"non-public host"`, when its hostname is `localhost`, ends
+with `.localhost` or `.local`, or is an IP literal that is private, loopback,
+link-local, reserved, multicast, or unspecified (checked with `ipaddress`);
+the same verdict applies when an explicit port other than 80/443 is present.
+DNS names that resolve to a private IP are out of scope — no resolution is
+performed, only literal hostnames/IPs are checked.
+
+The body is fetched with `client.stream("GET", url)` and read up to
+`MAX_BODY_BYTES = 2_000_000` bytes; any remainder is left unread. If the
+response has a `Content-Type` header and it is not `text/html` or
+`text/plain`, the body is treated as empty (status-code-based rules such as
+404/410 and closed-redirect still apply). The body is decoded with the
+response's encoding, or `utf-8` if none is known, with `errors="replace"`.
+
+A malformed target URL (e.g. one httpx rejects with `InvalidURL`, or one that
+raises `ValueError` during parsing) is `unverifiable` / `"invalid url"`
+rather than raising and aborting `verify_all`.
 
 Evaluated in this order (first match wins):
 

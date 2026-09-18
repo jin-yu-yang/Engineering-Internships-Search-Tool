@@ -1,5 +1,7 @@
 import asyncio
+import ipaddress
 import re
+from urllib.parse import urlsplit
 
 import httpx
 
@@ -36,6 +38,10 @@ USER_AGENT = (
     "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 "
     "(KHTML, like Gecko) Chrome/126.0 Safari/537.36"
 )
+MAX_BODY_BYTES = 2_000_000
+ALLOWED_CONTENT_TYPES = frozenset({"text/html", "text/plain"})
+_LOCAL_HOST_SUFFIXES = (".localhost", ".local")
+_STANDARD_PORTS = frozenset({80, 443})
 
 _WORD_RE = re.compile(r"[a-z0-9]+")
 _SCRIPT_STYLE_RE = re.compile(r"<(script|style)\b.*?</\1>", re.IGNORECASE | re.DOTALL)
@@ -84,17 +90,74 @@ def classify_response(status_code: int, final_url: str, html: str, title: str) -
     return _result("unverifiable", status_code, "title not found (likely JS-rendered)")
 
 
+def _is_blocked_host(url: str) -> bool:
+    """True if fetching ``url`` could reach a non-public network target.
+
+    Blocks localhost/.local names, private/loopback/link-local/reserved/
+    multicast/unspecified IP literals, and any explicit port other than
+    80/443. DNS names that resolve to a private IP are out of scope (no
+    resolution is performed).
+    """
+    try:
+        parts = urlsplit(url)
+        hostname = parts.hostname
+        port = parts.port
+    except ValueError:
+        # Malformed authority (e.g. bad port literal); let the HTTP client
+        # raise its own error rather than guessing here.
+        return False
+    if hostname is None:
+        return False
+    if hostname == "localhost" or hostname.endswith(_LOCAL_HOST_SUFFIXES):
+        return True
+    try:
+        ip = ipaddress.ip_address(hostname)
+    except ValueError:
+        ip = None
+    if ip is not None and (
+        ip.is_private
+        or ip.is_loopback
+        or ip.is_link_local
+        or ip.is_reserved
+        or ip.is_multicast
+        or ip.is_unspecified
+    ):
+        return True
+    if port is not None and port not in _STANDARD_PORTS:
+        return True
+    return False
+
+
 async def _verify_one(
     client: httpx.AsyncClient, candidate: Candidate, semaphore: asyncio.Semaphore
 ) -> Verification:
     async with semaphore:
+        if _is_blocked_host(candidate.url):
+            return _result("unverifiable", None, "non-public host")
         try:
-            response = await client.get(candidate.url)
+            async with client.stream("GET", candidate.url) as response:
+                content_type = response.headers.get("content-type", "")
+                base_type = content_type.split(";", 1)[0].strip().lower()
+                if content_type and base_type not in ALLOWED_CONTENT_TYPES:
+                    html = ""
+                else:
+                    body = b""
+                    async for chunk in response.aiter_bytes():
+                        body += chunk
+                        if len(body) >= MAX_BODY_BYTES:
+                            break
+                    body = body[:MAX_BODY_BYTES]
+                    encoding = response.encoding or "utf-8"
+                    html = body.decode(encoding, errors="replace")
+                status_code = response.status_code
+                final_url = str(response.url)
         except httpx.TimeoutException:
             return _result("unverifiable", None, "timeout")
+        except (httpx.InvalidURL, ValueError):
+            return _result("unverifiable", None, "invalid url")
         except httpx.HTTPError as exc:
             return _result("unverifiable", None, f"connection error: {type(exc).__name__}")
-    return classify_response(response.status_code, str(response.url), response.text, candidate.title)
+    return classify_response(status_code, final_url, html, candidate.title)
 
 
 async def verify_all(

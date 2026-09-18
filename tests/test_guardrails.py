@@ -57,6 +57,13 @@ def test_research_guardrail_rejects_bad_url_and_missing_sources():
     assert "candidate 2 (Beta): source_urls is empty" in message
 
 
+def test_research_guardrail_rejects_url_with_no_host():
+    brief = ResearchBrief(candidates=[make_candidate(url="https:///nohost")])
+    ok, message = research_guardrail(output(brief.model_dump_json()))
+    assert not ok
+    assert "candidate 1 (Acme): url has no host" in message
+
+
 def test_parse_brief_raises_value_error_on_garbage():
     try:
         parse_brief("nothing here")

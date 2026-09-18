@@ -130,6 +130,8 @@ def research_guardrail(output: Any) -> tuple[bool, str]:
         label = f"candidate {index} ({candidate.company})"
         if not candidate.url.startswith(("http://", "https://")):
             problems.append(f"{label}: url must start with http:// or https://")
+        elif not urlsplit(candidate.url).netloc:
+            problems.append(f"{label}: url has no host")
         if not candidate.source_urls:
             problems.append(f"{label}: source_urls is empty")
     if problems:

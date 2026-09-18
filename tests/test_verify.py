@@ -59,6 +59,84 @@ def test_other_status_is_unverifiable(code):
     assert (result.status, result.reason) == ("unverifiable", f"http {code}")
 
 
+def test_verify_all_handles_invalid_url_without_raising():
+    candidates = [make_candidate(url="https://acme.com/jo\x00b")]
+
+    async def run():
+        def handler(request: httpx.Request) -> httpx.Response:  # pragma: no cover
+            raise AssertionError("transport must not be called for an invalid URL")
+
+        transport = httpx.MockTransport(handler)
+        async with httpx.AsyncClient(transport=transport, follow_redirects=True) as client:
+            return await verify_all(candidates, client=client)
+
+    results = asyncio.run(run())
+    assert (results[0].status, results[0].reason) == ("unverifiable", "invalid url")
+
+
+@pytest.mark.parametrize(
+    "url",
+    [
+        "https://localhost/jobs/1",
+        "https://127.0.0.1/jobs/1",
+        "https://10.0.0.5/jobs/1",
+        "https://169.254.1.1/jobs/1",
+        "https://acme.internal.local/jobs/1",
+        "https://acme.com:8080/jobs/1",
+    ],
+)
+def test_verify_all_blocks_non_public_or_nonstandard_port_hosts(url):
+    candidates = [make_candidate(url=url)]
+
+    def handler(request: httpx.Request) -> httpx.Response:  # pragma: no cover
+        raise AssertionError("transport must not be called for a blocked host")
+
+    async def run():
+        transport = httpx.MockTransport(handler)
+        async with httpx.AsyncClient(transport=transport, follow_redirects=True) as client:
+            return await verify_all(candidates, client=client)
+
+    results = asyncio.run(run())
+    assert (results[0].status, results[0].reason) == ("unverifiable", "non-public host")
+
+
+def test_verify_all_truncates_oversized_body():
+    from internship_research_demo.verify import MAX_BODY_BYTES
+
+    padding = b" " * MAX_BODY_BYTES
+    late_title = b"<html><body>" + padding + b"<h1>Software Engineer Intern</h1></body></html>"
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(200, content=late_title, headers={"content-type": "text/html"})
+
+    candidates = [make_candidate(url="https://acme.com/jobs/1")]
+
+    async def run():
+        transport = httpx.MockTransport(handler)
+        async with httpx.AsyncClient(transport=transport, follow_redirects=True) as client:
+            return await verify_all(candidates, client=client)
+
+    results = asyncio.run(run())
+    assert results[0].status == "unverifiable"
+    assert results[0].reason == "title not found (likely JS-rendered)"
+
+
+def test_verify_all_treats_non_html_content_type_as_empty_body():
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(200, content=JOB_HTML.encode(), headers={"content-type": "application/pdf"})
+
+    candidates = [make_candidate(url="https://acme.com/jobs/1")]
+
+    async def run():
+        transport = httpx.MockTransport(handler)
+        async with httpx.AsyncClient(transport=transport, follow_redirects=True) as client:
+            return await verify_all(candidates, client=client)
+
+    results = asyncio.run(run())
+    assert results[0].status == "unverifiable"
+    assert results[0].reason == "title not found (likely JS-rendered)"
+
+
 def test_verify_all_end_to_end_with_mock_transport():
     def handler(request: httpx.Request) -> httpx.Response:
         if request.url.host == "boards.example.com":
