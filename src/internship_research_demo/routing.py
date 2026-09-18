@@ -1,7 +1,15 @@
 import re
+from collections.abc import Callable
+from typing import Any
 from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
-from internship_research_demo.models import BranchResult, Candidate, SourcedCandidate
+from internship_research_demo.models import (
+    BranchResult,
+    Candidate,
+    ResearchBrief,
+    SourcedCandidate,
+    VerifiedCandidate,
+)
 
 RESEARCH_MORE = "RESEARCH_MORE"
 REVIEW = "REVIEW"
@@ -88,3 +96,68 @@ def build_shortfall_note(viable: int, wanted: int, rounds: int) -> str:
         f"Only {viable} of {wanted} requested internships survived verification "
         f"after {rounds} research round(s)."
     )
+
+
+URL_RE = re.compile(r"https?://[^\s)\]>\"'<|]+")
+
+
+def extract_json(raw: str) -> str:
+    start, end = raw.find("{"), raw.rfind("}")
+    if start == -1 or end < start:
+        raise ValueError("no JSON object found in output")
+    return raw[start : end + 1]
+
+
+def parse_brief(raw: str) -> ResearchBrief:
+    return ResearchBrief.model_validate_json(extract_json(raw))
+
+
+def research_guardrail(output: Any) -> tuple[bool, str]:
+    """Validate the researcher's output and hand CrewAI clean JSON on success."""
+    try:
+        if isinstance(output.pydantic, ResearchBrief):
+            brief = output.pydantic
+        else:
+            brief = parse_brief(output.raw)
+    except ValueError as exc:
+        return (False, f"Output must be a single JSON object matching ResearchBrief: {exc}")
+
+    if not brief.candidates:
+        return (False, "Return at least one candidate in the candidates list.")
+
+    problems = []
+    for index, candidate in enumerate(brief.candidates, start=1):
+        label = f"candidate {index} ({candidate.company})"
+        if not candidate.url.startswith(("http://", "https://")):
+            problems.append(f"{label}: url must start with http:// or https://")
+        if not candidate.source_urls:
+            problems.append(f"{label}: source_urls is empty")
+    if problems:
+        return (False, "; ".join(problems))
+    return (True, brief.model_dump_json())
+
+
+def allowed_urls_for(candidates: list[VerifiedCandidate]) -> set[str]:
+    allowed: set[str] = set()
+    for verified in candidates:
+        allowed.add(verified.candidate.url)
+        allowed.update(verified.candidate.source_urls)
+    return allowed
+
+
+def make_report_url_guardrail(allowed_urls: set[str]) -> Callable[[Any], tuple[bool, str]]:
+    allowed = {normalize_url(u) for u in allowed_urls}
+
+    def report_url_guardrail(output: Any) -> tuple[bool, str]:
+        found = {u.rstrip(".,;:") for u in URL_RE.findall(output.raw)}
+        unknown = sorted(u for u in found if normalize_url(u) not in allowed)
+        if unknown:
+            return (
+                False,
+                "The report contains URLs that are not in the provided candidates. "
+                "Use only each candidate's url or source_urls. Unknown URLs: "
+                + ", ".join(unknown[:10]),
+            )
+        return (True, output.raw)
+
+    return report_url_guardrail
